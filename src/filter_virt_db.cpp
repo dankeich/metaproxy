@@ -115,6 +115,7 @@ namespace metaproxy_1 {
             boost::condition m_cond_session_ready;
             std::map<mp::Session, FrontendPtr> m_clients;
             bool pass_vhosts;
+            bool named_result_sets;
         };
     }
 }
@@ -492,6 +493,7 @@ bool yf::VirtualDB::Map::match(const std::string db) const
 yf::VirtualDB::VirtualDB() : m_p(new VirtualDB::Rep)
 {
     m_p->pass_vhosts = false;
+    m_p->named_result_sets = true;
 }
 
 yf::VirtualDB::~VirtualDB() {
@@ -760,13 +762,16 @@ void yf::VirtualDB::process(mp::Package &package) const
             static const int masks[] = {
                 Z_Options_search,
                 Z_Options_present,
-                Z_Options_namedResultSets,
                 Z_Options_scan,
                 -1
             };
             for (i = 0; masks[i] != -1; i++)
                 if (ODR_MASK_GET(req->options, masks[i]))
                     ODR_MASK_SET(resp->options, masks[i]);
+
+            if (m_p->named_result_sets &&
+                ODR_MASK_GET(req->options, Z_Options_namedResultSets))
+                ODR_MASK_SET(resp->options, Z_Options_namedResultSets);
 
             static const int versions[] = {
                 Z_ProtocolVersion_1,
@@ -878,6 +883,10 @@ void mp::filter::VirtualDB::configure(const xmlNode * ptr, bool test_only,
             VirtualDB::Map vmap(mp::util::database_name_normalize(database),
                                 targets, route);
             m_p->m_maps.push_back(vmap);
+        }
+        else if (!strcmp((const char *) ptr->name, "named-result-sets"))
+        {
+            m_p->named_result_sets = mp::xml::get_bool(ptr, true);
         }
         else
         {

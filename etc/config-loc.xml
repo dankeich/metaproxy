@@ -102,6 +102,7 @@ the following databaseNames (virtual databases):
         <init ignore-auth="true"/>
       </filter>
       <filter type="virt_db">
+        <named-result-sets>false</named-result-sets>
         <virtual>
           <database>idtest</database>
           <target>localhost:9999/Default</target>
